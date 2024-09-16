@@ -92,22 +92,32 @@ public class BinanceWebSocketClient {
 
         @Override
         public void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
-            // Parse incoming WebSocket message from Binance
+            // Log the entire received message for debugging
+            System.out.println("Received WebSocket message: " + message.getPayload());
+
+            // Parse the incoming WebSocket message from Binance
             JsonNode jsonNode = objectMapper.readTree(message.getPayload());
 
-            // Example of extracting token and price from Binance message
-            // Assuming Binance response has fields: "s" for symbol and "p" for price
-            String token = jsonNode.get("s").asText();
-            double price = jsonNode.get("p").asDouble();
+            // Check if the message is a trade event ("e":"trade")
+            if (jsonNode.has("e") && "trade".equals(jsonNode.get("e").asText()) && jsonNode.has("s") && jsonNode.has("p")) {
+                String token = jsonNode.get("s").asText();  // Symbol (e.g., "BTCUSDT")
+                double price = jsonNode.get("p").asDouble();  // Price (e.g., "58741.09000000")
 
-            // Create PriceUpdateDto object
-            PriceUpdateDto priceUpdateDto = new PriceUpdateDto();
-            priceUpdateDto.setToken(token);
-            priceUpdateDto.setPrice(price);
+                // Create PriceUpdateDto object
+                PriceUpdateDto priceUpdateDto = new PriceUpdateDto();
+                priceUpdateDto.setToken(token);
+                priceUpdateDto.setPrice(price);
 
-            // Send PriceUpdateDto to Kafka topic
-            kafkaProducerService.sendMessage(priceUpdateDto);
+                // Send the DTO to Kafka topic
+                kafkaProducerService.sendMessage(priceUpdateDto);  // No need to convert to JSON
+
+                // Log the DTO that was sent
+                System.out.println("Sent PriceUpdateDto to Kafka: " + priceUpdateDto);
+            } else {
+                System.out.println("Message does not contain required fields: " + message.getPayload());
+            }
         }
+
 
         @Override
         public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
