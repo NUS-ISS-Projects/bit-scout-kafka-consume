@@ -1,6 +1,8 @@
 package com.example.coin.consumer;
 
+import com.example.coin.dto.PriceUpdateDto;
 import com.example.coin.service.KafkaProducerService;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -63,7 +65,7 @@ public class BinanceWebSocketClient {
                 String jsonMessage = objectMapper.writeValueAsString(message);
                 userSession.sendMessage(new TextMessage(jsonMessage));
             } catch (IOException e) {
-                System.out.println("Error sending subscription message " + e);
+                System.out.println("Error sending subscription message: " + e);
             }
         } else {
             System.out.println("WebSocket session is not open.");
@@ -90,19 +92,32 @@ public class BinanceWebSocketClient {
 
         @Override
         public void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
-            kafkaProducerService.sendMessage(message.getPayload());
+            // Parse incoming WebSocket message from Binance
+            JsonNode jsonNode = objectMapper.readTree(message.getPayload());
+
+            // Example of extracting token and price from Binance message
+            // Assuming Binance response has fields: "s" for symbol and "p" for price
+            String token = jsonNode.get("s").asText();
+            double price = jsonNode.get("p").asDouble();
+
+            // Create PriceUpdateDto object
+            PriceUpdateDto priceUpdateDto = new PriceUpdateDto();
+            priceUpdateDto.setToken(token);
+            priceUpdateDto.setPrice(price);
+
+            // Send PriceUpdateDto to Kafka topic
+            kafkaProducerService.sendMessage(priceUpdateDto);
         }
 
         @Override
         public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
             userSession = null;
-            System.out.println("Disconnected from Binance WebSocket: {} " + status);
-            // Optionally implement reconnection logic
+            System.out.println("Disconnected from Binance WebSocket: " + status);
         }
 
         @Override
         public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
-            System.out.println("WebSocket transport error" + exception);
+            System.out.println("WebSocket transport error: " + exception);
         }
     }
 }
