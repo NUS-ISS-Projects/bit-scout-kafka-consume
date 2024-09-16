@@ -10,6 +10,7 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 
 @RestController
+@RequestMapping("/api/v1/coin")  // Setting the API prefix for the price-service
 public class CryptoController {
 
     @Autowired
@@ -40,5 +41,9 @@ public class CryptoController {
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
-
+    @GetMapping("/health")
+    public ResponseEntity<String> healthCheck() {
+        String podName = System.getenv("HOSTNAME");
+        return ResponseEntity.ok("Coin service is up and running on pod: " + podName);
+    }
 }
