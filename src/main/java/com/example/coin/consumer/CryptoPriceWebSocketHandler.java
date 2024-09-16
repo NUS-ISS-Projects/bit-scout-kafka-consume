@@ -32,7 +32,7 @@ public class CryptoPriceWebSocketHandler extends TextWebSocketHandler {
     }
 
 
-    @KafkaListener(topics = "crypto-prices", groupId = "crypto-group")
+    @KafkaListener(topics = "price-updates", groupId = "crypto-group")
     public void listenToPriceUpdates(String message) {
         for (WebSocketSession session : sessions) {
             try {
