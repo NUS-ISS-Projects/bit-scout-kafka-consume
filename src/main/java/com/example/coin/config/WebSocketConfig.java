@@ -14,7 +14,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(cryptoPriceWebSocketHandler(), "/ws/crypto-price").setAllowedOrigins("*");
+        registry.addHandler(cryptoPriceWebSocketHandler(), "/ws/price-updates").setAllowedOrigins("*");
     }
 
     @Bean
